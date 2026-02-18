@@ -219,12 +219,13 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:1.12.2")
+    implementation("androidx.activity:activity-compose:1.12.4")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    implementation("top.yukonga.miuix.kmp:miuix:0.8.0")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0")
+    val miuixVersion = "0.8.3"
+    implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:$miuixVersion")
     implementation("dev.chrisbanes.haze:haze:1.7.2")
 
     // Storage
@@ -234,7 +235,7 @@ dependencies {
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("io.insert-koin:koin-android:4.1.1")
     implementation("io.insert-koin:koin-androidx-compose:4.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
