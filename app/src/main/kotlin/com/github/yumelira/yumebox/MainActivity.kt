@@ -20,6 +20,7 @@
 
 package com.github.yumelira.yumebox
 
+import android.app.ActivityManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -111,7 +112,8 @@ class MainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
 
-        super.onCreate(savedInstanceState)
+            super.onCreate(savedInstanceState)
+        applyExcludeFromRecents(appSettingsStorage.excludeFromRecents.value)
 
         intentController = IntentController(this, lifecycleScope)
         handleIntent(intent)
@@ -136,6 +138,11 @@ class MainActivity : ComponentActivity() {
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
             val colorTheme = appSettingsViewModel.colorTheme.state.collectAsState().value
             val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
+            val excludeFromRecents = appSettingsViewModel.excludeFromRecents.state.collectAsState().value
+
+            LaunchedEffect(excludeFromRecents) {
+                this@MainActivity.applyExcludeFromRecents(excludeFromRecents)
+            }
 
             ProvideAndroidPlatformTheme {
                 YumeTheme(
@@ -207,6 +214,24 @@ class MainActivity : ComponentActivity() {
             }
 
             intentController.handleIntent(safeIntent)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun applyExcludeFromRecents(exclude: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
+
+        runCatching {
+            val am = getSystemService(ActivityManager::class.java) ?: return@runCatching
+            val currentTaskId = taskId
+            val task = am.appTasks.firstOrNull { appTask: ActivityManager.AppTask ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    appTask.taskInfo.taskId == currentTaskId
+                } else {
+                    appTask.taskInfo.id == currentTaskId
+                }
+            }
+            task?.setExcludeFromRecents(exclude)
         }
     }
 }
