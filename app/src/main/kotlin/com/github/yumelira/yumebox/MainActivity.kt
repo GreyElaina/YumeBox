@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,13 +51,7 @@ import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
-import com.github.yumelira.yumebox.presentation.component.BottomBar
-import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
-import com.github.yumelira.yumebox.presentation.component.LocalNavigator
-import com.github.yumelira.yumebox.presentation.component.LocalPagerState
-import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
-import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
-import com.github.yumelira.yumebox.presentation.component.rememberBottomBarScrollBehavior
+import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.screen.HomePager
 import com.github.yumelira.yumebox.presentation.screen.ProfilesPager
 import com.github.yumelira.yumebox.presentation.screen.ProxyPager
@@ -77,10 +72,10 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
@@ -170,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 defaultTransitions = NavigationTransitions.defaultStyle,
                             )
+                            EmasUpdateDialogHost()
                         }
                     }
                 }
@@ -328,6 +324,7 @@ fun MainScreen(
                         navigator,
                         isActive = page == pagerState.currentPage
                     )
+
                     2 -> ProfilesPager(innerPadding)
                     3 -> SettingPager(innerPadding)
                 }
@@ -335,4 +332,3 @@ fun MainScreen(
         }
     }
 }
-
