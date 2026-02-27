@@ -147,8 +147,8 @@ android {
             // Build-generated geo assets merged during packaging/lint
             assets.directories.add(geoFilesDownloadDir.asFile.absolutePath)
             // Let IDE index compose-destinations generated code without requiring a build refresh cycle
-            java.srcDir(layout.buildDirectory.dir("generated/ksp/debug/kotlin"))
-            java.srcDir(layout.buildDirectory.dir("generated/ksp/release/kotlin"))
+            // java.srcDir(layout.buildDirectory.dir("generated/ksp/debug/kotlin"))
+            // java.srcDir(layout.buildDirectory.dir("generated/ksp/release/kotlin"))
         }
     }
 
