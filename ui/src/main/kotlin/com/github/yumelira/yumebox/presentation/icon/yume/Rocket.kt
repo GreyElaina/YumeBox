@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Rocket: ImageVector
+val Yume.Rocket: ImageVector
     get() {
         if (_Rocket != null) {
             return _Rocket!!

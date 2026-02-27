@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Activity: ImageVector
+val Yume.Activity: ImageVector
     get() {
         if (_Activity != null) {
             return _Activity!!

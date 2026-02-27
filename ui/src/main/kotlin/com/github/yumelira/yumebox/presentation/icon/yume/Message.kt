@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Message: ImageVector
+val Yume.Message: ImageVector
     get() {
         if (_MessageCircleQuestionMark != null) {
             return _MessageCircleQuestionMark!!

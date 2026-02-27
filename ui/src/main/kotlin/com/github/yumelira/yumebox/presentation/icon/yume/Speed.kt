@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Speed: ImageVector
+val Yume.Speed: ImageVector
     get() {
         if (_Gauge != null) {
             return _Gauge!!

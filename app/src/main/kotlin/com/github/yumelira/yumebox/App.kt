@@ -14,32 +14,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2026.
  *
  */
 
 package com.github.yumelira.yumebox
 
 import android.app.Application
-import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
 import com.github.yumelira.yumebox.common.runtime.StartupGate
-import com.github.yumelira.yumebox.common.util.AppUtil
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.github.yumelira.yumebox.update.EmasUpdateManager
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.tukaani.xz.XZInputStream
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
-import org.tukaani.xz.XZInputStream
 
 class App : Application() {
 
@@ -47,8 +43,6 @@ class App : Application() {
         lateinit var instance: App
             private set
     }
-
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -62,7 +56,6 @@ class App : Application() {
 
         Global.init(this)
         MMKV.initialize(this)
-        initialize(this)
 
         val koinApp = startKoin {
             androidContext(this@App)

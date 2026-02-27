@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2026.
  *
  */
 
@@ -53,7 +53,7 @@ import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
-import com.github.yumelira.yumebox.common.util.WebViewUtils.getPanelUrl
+import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.BottomBarContent
@@ -70,10 +70,10 @@ import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
-import com.github.yumelira.yumebox.screen.HomePager
-import com.github.yumelira.yumebox.screen.ProfilesPager
-import com.github.yumelira.yumebox.screen.SettingPager
-import com.github.yumelira.yumebox.viewmodel.AppSettingsViewModel
+import com.github.yumelira.yumebox.screen.home.HomePager
+import com.github.yumelira.yumebox.screen.profiles.ProfilesPager
+import com.github.yumelira.yumebox.screen.settings.SettingPager
+import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.microsoft.clarity.Clarity
 import com.microsoft.clarity.ClarityConfig
 import com.microsoft.clarity.models.LogLevel
@@ -289,8 +289,7 @@ fun MainScreen(
     val pagerClickAnimationSpec: (Int, Int) -> androidx.compose.animation.core.AnimationSpec<Float> =
         remember {
             { fromPage: Int, toPage: Int ->
-                val distance = abs(fromPage - toPage)
-                val durationMillis = when (distance) {
+                val durationMillis = when (val distance = abs(fromPage - toPage)) {
                     0 -> AnimationSpecs.DURATION_INSTANT
                     1 -> 360
                     else -> (360 + (distance - 1) * 70).coerceAtMost(520)

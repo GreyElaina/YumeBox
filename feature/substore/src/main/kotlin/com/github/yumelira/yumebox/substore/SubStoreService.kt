@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2026.
  *
  */
 
@@ -23,7 +23,7 @@ package com.github.yumelira.yumebox.substore
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.github.yumelira.yumebox.common.native.NativeLibraryManager
+import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import com.github.yumelira.yumebox.core.Global
 import timber.log.Timber
 
