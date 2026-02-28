@@ -534,14 +534,6 @@ internal fun AddProfileSheet(
                                                 verticalArrangement = Arrangement.Center
                                             ) {
                                                 Text(MLang.ProfilesPage.QrScanner.NeedPermission)
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                TextButton(
-                                                    text = MLang.ProfilesPage.QrScanner.GrantPermission,
-                                                    onClick = {
-                                                        cameraPermissionLauncher.launch(
-                                                            Manifest.permission.CAMERA
-                                                        )
-                                                    })
                                             }
                                         } else {
                                             CircularProgressIndicator(modifier = Modifier.size(32.dp))
