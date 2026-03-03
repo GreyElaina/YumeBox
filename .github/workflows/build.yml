@@ -128,8 +128,9 @@ jobs:
           fi
       - name: Write sentry config
         run: |
-            if [ -n "${{ secrets.SENTRY_AUTH_TOKEN }}" ]; then
-              echo "${{ secrets.SENTRY_AUTH_TOKEN }}" | base64 --decode > sentry.properties
+          if [ -n "${{ secrets.SENTRY_AUTH_TOKEN }}" ]; then
+            echo "${{ secrets.SENTRY_AUTH_TOKEN }}" | base64 --decode > sentry.properties
+          fi
 
       - name: Inject aliyun-emas-services.json
         env:
