@@ -143,11 +143,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val config = ClarityConfig(
-            projectId = "v4e5psv4w6",
-            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
-        )
-        Clarity.initialize(applicationContext, config)
+//        val config = ClarityConfig(
+//            projectId = "v4e5psv4w6",
+//            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
+//        )
+//        Clarity.initialize(applicationContext, config)
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()

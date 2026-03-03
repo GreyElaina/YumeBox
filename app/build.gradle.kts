@@ -34,6 +34,8 @@ plugins {
     id("com.mikepenz.aboutlibraries.plugin.android")
     id("yumebox.base.android")
     id("yumebox.build.helpers")
+
+    id("io.sentry.android.gradle") version "6.1.0"
 }
 
 private data class EmasConfigValues(
@@ -352,4 +354,14 @@ aboutLibraries {
     export {
         outputFile = file("src/main/resources/aboutlibraries.json")
     }
+}
+
+
+sentry {
+    org.set("12d34a06e78c")
+    projectName.set("android")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
 }

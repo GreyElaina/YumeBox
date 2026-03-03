@@ -152,6 +152,9 @@ class HomeViewModel(
                 if (!_isToggling.value) {
                     _displayRunning.value = running
                 }
+                if (!running) {
+                    _speedHistory.value = List(24) { 0L }
+                }
                 if (running == _displayRunning.value) {
                     _isToggling.value = false
                 }
@@ -254,12 +257,19 @@ class HomeViewModel(
         viewModelScope.launch {
             flow {
                 while (true) {
-                    val t = proxyFacade.trafficNow.value
-                    val d = TrafficData.from(t)
-                    emit((d.upload + d.download).coerceAtLeast(0L))
+                    val sample = if (proxyFacade.isRunning.value) {
+                        val t = proxyFacade.trafficNow.value
+                        val d = TrafficData.from(t)
+                        (d.upload + d.download).coerceAtLeast(0L)
+                    } else {
+                        0L
+                    }
+                    emit(sample)
                     kotlinx.coroutines.delay(1000L)
                 }
-            }.catch { }.collect { sample ->
+            }.catch { e ->
+                Timber.w(e, "Speed sampling loop failed")
+            }.collect { sample ->
                 _speedHistory.update { old ->
                     buildList(sampleLimit) {
                         repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(0L) }
@@ -283,4 +293,3 @@ class HomeViewModel(
         val error: String? = null
     )
 }
-

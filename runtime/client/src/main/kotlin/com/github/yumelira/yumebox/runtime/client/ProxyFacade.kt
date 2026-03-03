@@ -27,6 +27,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Build
+import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.core.model.Traffic
@@ -295,6 +296,20 @@ class ProxyFacade(private val context: Context) {
     }
 
     /**
+     * Parse active profile config and return proxy group names without runtime load.
+     */
+    suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean = false): List<String> {
+        return ServiceClient.clash().queryProfileProxyGroupNames(excludeNotSelectable)
+    }
+
+    /**
+     * Parse active profile config and return proxy groups without runtime load.
+     */
+    suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean = false): List<ProxyGroup> {
+        return ServiceClient.clash().queryProfileProxyGroups(excludeNotSelectable)
+    }
+
+    /**
      * Query proxy group details
      * @param name Group name
      * @param sort Proxy sorting method
@@ -353,6 +368,10 @@ class ProxyFacade(private val context: Context) {
      * @return Total traffic in bytes
      */
     suspend fun queryTrafficTotal(): Long {
+        if (!_isRunning.value) {
+            _trafficTotal.value = 0L
+            return 0L
+        }
         val traffic = ServiceClient.clash().queryTrafficTotal()
         _trafficTotal.value = traffic
         return traffic
@@ -362,6 +381,10 @@ class ProxyFacade(private val context: Context) {
      * Query current traffic (upload/download speed)
      */
     suspend fun queryTrafficNow(): Long {
+        if (!_isRunning.value) {
+            _trafficNow.value = 0L
+            return 0L
+        }
         val traffic = ServiceClient.clash().queryTrafficNow()
         _trafficNow.value = traffic
         return traffic
@@ -393,13 +416,44 @@ class ProxyFacade(private val context: Context) {
         _isRunning.value = isRunning
     }
 
+    private fun buildPreviewGroups(groupNames: List<String>): List<ProxyGroupInfo> {
+        return groupNames.map { name ->
+            ProxyGroupInfo(
+                name = name,
+                type = Proxy.Type.Unknown,
+                proxies = emptyList(),
+                now = "-",
+                icon = null,
+            )
+        }
+    }
+
     /**
      * Refresh proxy groups
      */
     suspend fun refreshProxyGroups() {
         runCatching {
-            if (!_isRunning.value) return@runCatching
-            
+            ServiceClient.connect(appContext)
+            if (!_isRunning.value) {
+                val previewGroups = queryProfileProxyGroups(excludeNotSelectable = false)
+                val previewNames = queryProfileProxyGroupNames(excludeNotSelectable = false)
+                if (previewGroups.isNotEmpty() && previewGroups.size == previewNames.size) {
+                    _proxyGroups.value = previewGroups.mapIndexed { index, preview ->
+                        ProxyGroupInfo(
+                            name = previewNames[index],
+                            type = preview.type,
+                            proxies = preview.proxies,
+                            now = preview.now.ifBlank { "-" },
+                            icon = preview.icon,
+                        )
+                    }
+                } else {
+                    // Fallback to names-only preview to avoid mismatched name/group mapping.
+                    _proxyGroups.value = buildPreviewGroups(previewNames)
+                }
+                return@runCatching
+            }
+
             val groupNames = queryProxyGroupNames(excludeNotSelectable = false)
             val groups = groupNames.map { name ->
                 val proxyGroup = queryProxyGroup(name)
@@ -435,8 +489,13 @@ class ProxyFacade(private val context: Context) {
     suspend fun refreshAll() {
         refreshCurrentProfile()
         refreshProxyGroups()
-        queryTrafficNow()
-        queryTrafficTotal()
+        if (_isRunning.value) {
+            queryTrafficNow()
+            queryTrafficTotal()
+        } else {
+            _trafficNow.value = 0L
+            _trafficTotal.value = 0L
+        }
     }
 
     private suspend fun refreshAllSafely() {

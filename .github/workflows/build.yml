@@ -76,7 +76,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.25"
           cache: true
           cache-dependency-path: |
             **/go.sum
@@ -126,6 +126,10 @@ jobs:
             echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
             echo "keystore.path=release.keystore" >> signing.properties
           fi
+      - name: Write sentry config
+        run: |
+            if [ -n "${{ secrets.SENTRY_AUTH_TOKEN }}" ]; then
+              echo "${{ secrets.SENTRY_AUTH_TOKEN }}" | base64 --decode > sentry.properties
 
       - name: Inject aliyun-emas-services.json
         env:

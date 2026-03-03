@@ -31,6 +31,8 @@ import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.github.yumelira.yumebox.service.runtime.util.sendOverrideChanged
 import kotlinx.coroutines.*
@@ -57,11 +59,31 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun queryTrafficNow(): Long {
+        if (!StatusProvider.serviceRunning) return 0L
         return Clash.queryTrafficNow()
     }
 
     override fun queryTrafficTotal(): Long {
+        if (!StatusProvider.serviceRunning) return 0L
         return Clash.queryTrafficTotal()
+    }
+
+    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        val current = store.activeProfile ?: return emptyList()
+        val active = ImportedDao.queryByUUID(current) ?: return emptyList()
+        return Clash.queryProfileGroupNames(
+            path = context.importedDir.resolve(active.uuid.toString()),
+            excludeNotSelectable = excludeNotSelectable,
+        )
+    }
+
+    override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+        val current = store.activeProfile ?: return emptyList()
+        val active = ImportedDao.queryByUUID(current) ?: return emptyList()
+        return Clash.queryProfileGroups(
+            path = context.importedDir.resolve(active.uuid.toString()),
+            excludeNotSelectable = excludeNotSelectable,
+        )
     }
 
     override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {

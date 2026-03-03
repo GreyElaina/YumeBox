@@ -105,7 +105,11 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                 ) {
                     // 可点击的流量区域 — 点击即启停代理
                     TrafficDisplay(
-                        trafficNow = TrafficData.from(trafficNow),
+                        trafficNow = if (displayRunning) {
+                            TrafficData.from(trafficNow)
+                        } else {
+                            TrafficData.ZERO
+                        },
                         profileName = currentProfile?.name,
                         tunnelMode = null,
                         isRunning = displayRunning,

@@ -132,6 +132,35 @@ object Clash {
         }
     }
 
+    fun queryProfileGroupNames(path: File, excludeNotSelectable: Boolean): List<String> {
+        val namesJson = Bridge.nativeQueryProfileGroupNames(path.absolutePath, excludeNotSelectable)
+            ?: return emptyList()
+        val names = runCatching {
+            Json.decodeFromString(JsonArray.serializer(), namesJson)
+        }.getOrElse {
+            return emptyList()
+        }
+        return names.map {
+            require(it.jsonPrimitive.isString)
+            it.jsonPrimitive.content
+        }
+    }
+
+    fun queryProfileGroups(path: File, excludeNotSelectable: Boolean): List<ProxyGroup> {
+        val groupsJson = Bridge.nativeQueryProfileGroups(path.absolutePath, excludeNotSelectable)
+            ?: return emptyList()
+        val groups = runCatching {
+            Json.decodeFromString(JsonArray.serializer(), groupsJson)
+        }.getOrElse {
+            return emptyList()
+        }
+        return List(groups.size) {
+            runCatching {
+                Json.decodeFromJsonElement(ProxyGroup.serializer(), groups[it])
+            }.getOrDefault(ProxyGroup(Proxy.Type.Unknown, emptyList(), ""))
+        }
+    }
+
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
             ?.let { Json.decodeFromString(ProxyGroup.serializer(), it) }
