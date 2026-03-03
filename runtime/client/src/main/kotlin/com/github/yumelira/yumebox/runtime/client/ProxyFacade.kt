@@ -27,36 +27,38 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Build
-import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.core.model.ProxyGroup
-import com.github.yumelira.yumebox.core.model.ProxySort
-import com.github.yumelira.yumebox.core.model.Traffic
-import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import kotlinx.coroutines.delay
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
 import com.github.yumelira.yumebox.service.ClashService
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.TunService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.launch
+import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import java.util.*
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * ProxyFacade - proxy management facade
  */
 class ProxyFacade(private val context: Context) {
+    private data class PreviewCacheKey(
+        val profileId: UUID,
+        val profileUpdatedAt: Long,
+        val excludeNotSelectable: Boolean,
+    )
+
+    private data class PreviewCacheEntry(
+        val key: PreviewCacheKey,
+        val groups: List<ProxyGroupInfo>,
+    )
+
     private val appContext: Context = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -81,13 +83,14 @@ class ProxyFacade(private val context: Context) {
     val currentProfile: StateFlow<Profile?> = _currentProfile.asStateFlow()
 
     // Traffic statistics
-    private val _trafficNow = MutableStateFlow<Traffic>(0L)
+    private val _trafficNow = MutableStateFlow(0L)
     val trafficNow: StateFlow<Traffic> = _trafficNow.asStateFlow()
 
-    private val _trafficTotal = MutableStateFlow<Traffic>(0L)
+    private val _trafficTotal = MutableStateFlow(0L)
     val trafficTotal: StateFlow<Traffic> = _trafficTotal.asStateFlow()
 
     private var trafficPollingJob: Job? = null
+    private var previewCache: PreviewCacheEntry? = null
 
     private val serviceEventsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -151,7 +154,7 @@ class ProxyFacade(private val context: Context) {
                         queryTrafficTotal()
                     }
                 }
-                delay(1000L)
+                delay(1000L.milliseconds)
             }
         }
     }
@@ -222,7 +225,7 @@ class ProxyFacade(private val context: Context) {
         }
 
         // Readiness check: only mark running after proxy groups are available.
-        val ready = withTimeoutOrNull(8_000L) {
+        val ready = withTimeoutOrNull(8_000L.milliseconds) {
             while (true) {
                 val groups = withContext(Dispatchers.IO) {
                     runCatching {
@@ -232,7 +235,7 @@ class ProxyFacade(private val context: Context) {
 
                 if (!groups.isNullOrEmpty()) return@withTimeoutOrNull true
 
-                delay(250)
+                delay(250.milliseconds)
             }
         } == true
 
@@ -333,7 +336,7 @@ class ProxyFacade(private val context: Context) {
         val ok = ServiceClient.clash().patchSelector(group, proxyName)
         if (ok) {
             // Clash 会异步更新 selector 的 now 值，稍等再刷新一把 UI
-            delay(200)
+            delay(200.milliseconds)
             refreshProxyGroups()
         }
         return ok
@@ -349,7 +352,7 @@ class ProxyFacade(private val context: Context) {
         if (refreshAfter) {
             // 延迟测试结果是异步写回的，刷新几次确保 UI 能拿到 delay
             repeat(4) {
-                delay(600)
+                delay(600.milliseconds)
                 refreshProxyGroups()
             }
         }
@@ -403,7 +406,7 @@ class ProxyFacade(private val context: Context) {
                 profileManager.setActive(currentProfile)
                 _currentProfile.value = currentProfile
                 // 等待 service 侧 ConfigurationModule 完成 load，再刷 UI
-                delay(600)
+                delay(600.milliseconds)
                 refreshAll()
             }
         }
@@ -435,10 +438,33 @@ class ProxyFacade(private val context: Context) {
         runCatching {
             ServiceClient.connect(appContext)
             if (!_isRunning.value) {
-                val previewGroups = queryProfileProxyGroups(excludeNotSelectable = false)
-                val previewNames = queryProfileProxyGroupNames(excludeNotSelectable = false)
-                if (previewGroups.isNotEmpty() && previewGroups.size == previewNames.size) {
-                    _proxyGroups.value = previewGroups.mapIndexed { index, preview ->
+                val excludeNotSelectable = false
+                val activeProfile = ServiceClient.profile().queryActive().also {
+                    _currentProfile.value = it
+                }
+
+                if (activeProfile == null) {
+                    previewCache = null
+                    _proxyGroups.value = emptyList()
+                    return@runCatching
+                }
+
+                val cacheKey = PreviewCacheKey(
+                    profileId = activeProfile.uuid,
+                    profileUpdatedAt = activeProfile.updatedAt,
+                    excludeNotSelectable = excludeNotSelectable,
+                )
+
+                val cached = previewCache
+                if (cached != null && cached.key == cacheKey) {
+                    _proxyGroups.value = cached.groups
+                    return@runCatching
+                }
+
+                val previewGroups = queryProfileProxyGroups(excludeNotSelectable = excludeNotSelectable)
+                val previewNames = queryProfileProxyGroupNames(excludeNotSelectable = excludeNotSelectable)
+                val resolvedGroups = if (previewGroups.isNotEmpty() && previewGroups.size == previewNames.size) {
+                    previewGroups.mapIndexed { index, preview ->
                         ProxyGroupInfo(
                             name = previewNames[index],
                             type = preview.type,
@@ -449,8 +475,11 @@ class ProxyFacade(private val context: Context) {
                     }
                 } else {
                     // Fallback to names-only preview to avoid mismatched name/group mapping.
-                    _proxyGroups.value = buildPreviewGroups(previewNames)
+                    buildPreviewGroups(previewNames)
                 }
+
+                previewCache = PreviewCacheEntry(cacheKey, resolvedGroups)
+                _proxyGroups.value = resolvedGroups
                 return@runCatching
             }
 
@@ -461,7 +490,7 @@ class ProxyFacade(private val context: Context) {
                     name = name,
                     type = proxyGroup.type,
                     proxies = proxyGroup.proxies,
-                    now = proxyGroup.now ?: "",
+                    now = proxyGroup.now,
                     icon = proxyGroup.icon
                 )
             }
@@ -506,5 +535,4 @@ class ProxyFacade(private val context: Context) {
             Timber.w(e, "refreshAllSafely failed")
         }
     }
-
 }
