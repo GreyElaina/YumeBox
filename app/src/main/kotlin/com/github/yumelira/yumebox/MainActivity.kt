@@ -31,7 +31,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
@@ -47,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
@@ -100,6 +106,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
+import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
 
@@ -343,6 +350,20 @@ fun MainScreen(
                 )
             },
         ) { innerPadding ->
+            val density = LocalDensity.current
+            val layoutDirection = LocalLayoutDirection.current
+            val systemBottomInset = with(density) {
+                val navBottom = androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(this)
+                val gestureBottom = androidx.compose.foundation.layout.WindowInsets.systemGestures.getBottom(this)
+                max(navBottom, gestureBottom).toDp()
+            }
+            val safeMainPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding().coerceAtLeast(systemBottomInset),
+                start = innerPadding.calculateStartPadding(layoutDirection),
+                end = innerPadding.calculateEndPadding(layoutDirection),
+            )
+
             HorizontalPager(
                 modifier = Modifier
                     .hazeSource(state = hazeState)
@@ -360,9 +381,9 @@ fun MainScreen(
                 ),
             ) { page ->
                 when (page) {
-                    0 -> HomePager(innerPadding)
+                    0 -> HomePager(safeMainPadding)
                     1 -> ProxyPager(
-                        mainInnerPadding = innerPadding,
+                        mainInnerPadding = safeMainPadding,
                         onNavigateToProviders = {
                             navigator.navigate(ProvidersScreenDestination) {
                                 launchSingleTop = true
@@ -380,8 +401,8 @@ fun MainScreen(
                         isActive = page == pagerState.currentPage,
                     )
 
-                    2 -> ProfilesPager(innerPadding)
-                    3 -> SettingPager(innerPadding)
+                    2 -> ProfilesPager(safeMainPadding)
+                    3 -> SettingPager(safeMainPadding)
                 }
             }
         }

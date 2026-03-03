@@ -28,7 +28,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,7 +101,8 @@ fun LocalWebView(
 
     if (initialUrl.isEmpty()) {
         Box(
-            modifier = modifier.statusBarsPadding(), contentAlignment = Alignment.Center
+            modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+            contentAlignment = Alignment.Center
         ) {
             Text(MLang.Component.WebView.InvalidUrl)
         }
@@ -112,7 +115,7 @@ fun LocalWebView(
                 webViewRef.value = it
             }
         },
-        modifier = modifier.statusBarsPadding(),
+        modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing),
     )
 }
 
