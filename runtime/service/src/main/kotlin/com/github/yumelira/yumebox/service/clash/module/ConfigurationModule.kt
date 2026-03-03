@@ -91,7 +91,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                         }
                     }
                     if (!restored) {
-                        Log.w("Restore selector failed: group=${selection.proxy}, selected=${selection.selected}")
+                        Log.w("Restore selector failed: ${selection.proxy}/${selection.selected}")
                     }
                 }
 
@@ -99,7 +99,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 service.sendProfileLoaded(current)
 
-                Log.d("Profile ${active.name} loaded")
+                Log.d("Profile loaded: ${active.name}")
             } catch (e: Exception) {
                 return enqueueEvent(LoadException(e.message ?: "Unknown"))
             }

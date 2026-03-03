@@ -58,9 +58,9 @@ class DialerReceiver : BroadcastReceiver() {
             }
             context.startActivity(launchIntent)
         } catch (e: ActivityNotFoundException) {
-            Timber.e(e, "启动主界面失败")
+            Timber.e(e, "Open main activity failed")
         } catch (e: SecurityException) {
-            Timber.e(e, "启动主界面失败")
+            Timber.e(e, "Open main activity failed")
         }
     }
 }

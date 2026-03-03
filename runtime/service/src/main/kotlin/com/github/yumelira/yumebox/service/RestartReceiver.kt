@@ -41,9 +41,9 @@ class RestartReceiver : BroadcastReceiver() {
                         context.startService(serviceIntent)
                     }
                 } catch (e: SecurityException) {
-                    Timber.e(e, "启动自动重启服务失败")
+                    Timber.e(e, "Start auto-restart service failed")
                 } catch (e: IllegalStateException) {
-                    Timber.e(e, "启动自动重启服务失败")
+                    Timber.e(e, "Start auto-restart service failed")
                 }
             }
         }

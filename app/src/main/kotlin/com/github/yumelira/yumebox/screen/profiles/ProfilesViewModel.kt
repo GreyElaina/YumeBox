@@ -90,7 +90,7 @@ class ProfilesViewModel(
                 _profiles.value = allProfiles
                 _activeProfile.value = active
 
-                Timber.d("Profiles refreshed: ${allProfiles.size} total, active=${active?.name}")
+                Timber.d("Profiles refreshed: count=${allProfiles.size} active=${active?.name}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to refresh profiles")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -174,7 +174,7 @@ class ProfilesViewModel(
             outputFile.outputStream().use { output ->
                 inputFile.copyTo(output)
             }
-            Timber.d("File copied to pending dir: ${outputFile.absolutePath}")
+            Timber.d("File copied: ${outputFile.absolutePath}")
         }
     }
 
@@ -188,7 +188,7 @@ class ProfilesViewModel(
                 val newUuid = profilesRepository.cloneProfile(uuid)
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format("Clone"))
                 refreshProfiles()
-                Timber.i("Profile cloned: $uuid -> $newUuid")
+                Timber.i("Profile cloned: from=$uuid to=$newUuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to clone profile")
                 showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: "Unknown"))
@@ -348,7 +348,7 @@ class ProfilesViewModel(
 
                 _profiles.value = reordered
                 profilesRepository.reorderProfiles(reordered.map { it.uuid })
-                Timber.d("Reorder profiles: $from -> $to")
+                Timber.d("Profiles reordered: $from->$to")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to reorder profiles")
                 refreshProfiles()
@@ -428,4 +428,3 @@ data class DownloadProgress(
     val percent: Int,
     val message: String
 )
-

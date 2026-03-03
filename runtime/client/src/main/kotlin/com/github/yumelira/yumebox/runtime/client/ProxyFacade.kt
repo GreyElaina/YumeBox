@@ -187,7 +187,7 @@ class ProxyFacade(private val context: Context) {
      * @throws VpnPermissionRequired if VPN permission is needed but not granted
      */
     suspend fun startProxy(useTun: Boolean = false) {
-        Timber.i("Starting proxy service, useTun=$useTun")
+        Timber.i("Start proxy: tun=$useTun")
         ServiceClient.connect(appContext)
 
         // Ensure an active profile exists before starting clash runtime, otherwise service will
@@ -246,7 +246,7 @@ class ProxyFacade(private val context: Context) {
                 _proxyGroups.value = emptyList()
                 _trafficNow.value = 0L
                 _trafficTotal.value = 0L
-                Timber.w("Proxy runtime readiness failed: no proxy groups available")
+                Timber.w("Proxy start failed: no proxy groups")
                 throw IllegalStateException("代理启动失败：配置未成功加载（可能是配置校验失败或网络资源下载失败）")
             }
         }
@@ -254,14 +254,14 @@ class ProxyFacade(private val context: Context) {
         updateServiceState(true)
         startTrafficPolling()
         refreshAllSafely()
-        Timber.i("Proxy service started successfully: ${activeProfile.name}")
+        Timber.i("Proxy started: ${activeProfile.name}")
     }
 
     /**
      * Stop proxy service
      */
     suspend fun stopProxy() {
-        Timber.i("Stopping proxy service")
+        Timber.i("Stop proxy")
 
         withContext(Dispatchers.IO) {
             runCatching {
@@ -282,7 +282,7 @@ class ProxyFacade(private val context: Context) {
         _trafficNow.value = 0L
         _trafficTotal.value = 0L
 
-        Timber.i("Proxy service stopped")
+        Timber.i("Proxy stopped")
     }
 
     /**
@@ -314,7 +314,7 @@ class ProxyFacade(private val context: Context) {
      * @return True if selection successful
      */
     suspend fun selectProxy(group: String, proxyName: String): Boolean {
-        Timber.d("Selecting proxy: group=$group, proxy=$proxyName")
+        Timber.d("Select proxy: group=$group proxy=$proxyName")
         val ok = ServiceClient.clash().patchSelector(group, proxyName)
         if (ok) {
             // Clash 会异步更新 selector 的 now 值，稍等再刷新一把 UI
@@ -449,4 +449,3 @@ class ProxyFacade(private val context: Context) {
     }
 
 }
-

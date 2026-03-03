@@ -208,8 +208,7 @@ class MainActivity : ComponentActivity() {
                     profilesRepository = profilesRepository,
                     appSettingsStorage = appSettingsStorage,
                     networkSettingsStorage = networkSettingsStorage,
-                    serviceCache = serviceCache,
-                    isBootCompleted = false
+                    serviceCache = serviceCache
                 )
             }
 
@@ -268,10 +267,6 @@ fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 3), pageCount = { 4 })
     val hazeState = remember { HazeState() }
-    val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
-        tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.8f)),
-    )
 
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
@@ -294,7 +289,7 @@ fun MainScreen(
                     1 -> 360
                     else -> (360 + (distance - 1) * 70).coerceAtMost(520)
                 }
-                tween<Float>(
+                tween(
                     durationMillis = durationMillis,
                     easing = AnimationSpecs.Legacy
                 )

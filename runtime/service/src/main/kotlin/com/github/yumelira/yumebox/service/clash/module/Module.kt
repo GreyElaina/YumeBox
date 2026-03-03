@@ -88,7 +88,7 @@ abstract class Module<E>(val service: Service) {
                     runCatching {
                         service.unregisterReceiver(receiver)
                     }.onFailure { e ->
-                        Log.w("$moduleName: unregisterReceiver ignored (${receiver.javaClass.simpleName})", e)
+                        Log.w("$moduleName: unregisterReceiver ignored", e)
                     }
                 }
 

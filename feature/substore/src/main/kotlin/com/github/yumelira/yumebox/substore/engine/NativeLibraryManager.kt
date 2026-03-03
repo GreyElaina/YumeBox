@@ -111,7 +111,7 @@ object NativeLibraryManager {
                 LibrarySource.EXTENSION_APK -> extractFromExtensionApk(info, targetFile)
             }
         }.getOrElse { e ->
-            Timber.w(e, "提取库失败: ${info.name}")
+            Timber.w(e, "Library extract failed: ${info.name}")
             false
         }
     }
@@ -159,18 +159,13 @@ object NativeLibraryManager {
 
         val extensionApk = getExtensionApk(info.packageName)
         if (extensionApk == null) {
-            Timber.w("Extension APK not installed: ${info.packageName}, skipping ${info.name}")
+            Timber.w("Extension APK missing: ${info.packageName}")
             return false
         }
 
         val abi = getSupportedAbi()
 
         ZipFile(extensionApk).use { zip ->
-            val libEntries = zip.entries().asSequence()
-                .filter { it.name.startsWith("lib/") }
-                .map { it.name }
-                .toList()
-
             val pattern =
                 Regex("lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so")
             val entry = zip.entries().asSequence().firstOrNull { e ->
@@ -178,7 +173,7 @@ object NativeLibraryManager {
             }
 
             if (entry == null) {
-                Timber.w("Library ${info.name} not found in extension APK, available: $libEntries")
+                Timber.w("Library not found in extension APK: ${info.name}")
                 return false
             }
 
@@ -242,7 +237,7 @@ object NativeLibraryManager {
             System.load(path)
             true
         }.getOrElse { e ->
-            Timber.e(e, "加载JNI库失败: $name")
+            Timber.e(e, "JNI load failed: $name")
             false
         }
     }

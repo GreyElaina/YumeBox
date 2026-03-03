@@ -33,6 +33,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)
     val themeSeedColorArgb by longFlow(0xFFFFFFFFL)
     val automaticRestart by boolFlow(false)
+    val autoUpdateCurrentProfileOnStart by boolFlow(true)
     val hideAppIcon by boolFlow(false)
     val excludeFromRecents by boolFlow(false)
     val showTrafficNotification by boolFlow(true)

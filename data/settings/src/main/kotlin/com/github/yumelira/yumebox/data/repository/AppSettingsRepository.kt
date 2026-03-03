@@ -36,6 +36,7 @@ class AppSettingsRepository(
     val colorTheme: Preference<AppColorTheme> = storage.colorTheme
     val themeSeedColorArgb: Preference<Long> = storage.themeSeedColorArgb
     val automaticRestart: Preference<Boolean> = storage.automaticRestart
+    val autoUpdateCurrentProfileOnStart: Preference<Boolean> = storage.autoUpdateCurrentProfileOnStart
     val hideAppIcon: Preference<Boolean> = storage.hideAppIcon
     val excludeFromRecents: Preference<Boolean> = storage.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification

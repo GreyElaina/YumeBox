@@ -38,6 +38,7 @@ class AppSettingsViewModel(
     val colorTheme: Preference<AppColorTheme> = repository.colorTheme
     val themeSeedColorArgb: Preference<Long> = repository.themeSeedColorArgb
     val automaticRestart: Preference<Boolean> = repository.automaticRestart
+    val autoUpdateCurrentProfileOnStart: Preference<Boolean> = repository.autoUpdateCurrentProfileOnStart
     val hideAppIcon: Preference<Boolean> = repository.hideAppIcon
     val excludeFromRecents: Preference<Boolean> = repository.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = repository.showTrafficNotification
@@ -56,6 +57,7 @@ class AppSettingsViewModel(
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
     fun onPageScaleChange(scale: Float) = pageScale.set(scale)
     fun onAutomaticRestartChange(enabled: Boolean) = automaticRestart.set(enabled)
+    fun onAutoUpdateCurrentProfileOnStartChange(enabled: Boolean) = autoUpdateCurrentProfileOnStart.set(enabled)
     fun onHideAppIconChange(hide: Boolean) = hideAppIcon.set(hide)
     fun onExcludeFromRecentsChange(exclude: Boolean) = excludeFromRecents.set(exclude)
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)

@@ -61,33 +61,32 @@ class IntentController(
             runCatching {
                 val activeProfile = profilesRepository.queryActiveProfile()
                 if (activeProfile == null) {
-                    Timber.w("No active profile, ignore external START_CLASH")
+                    Timber.w("Skip external start: no active profile")
                     return@launch
                 }
 
-                Timber.i("Starting Clash via external intent for profile: ${activeProfile.name}")
+                Timber.i("External start: profile=${activeProfile.name}")
                  
                 // Start proxy with TUN based on network settings
                 val useTun = networkSettingsStorage.proxyMode.value == com.github.yumelira.yumebox.data.model.ProxyMode.Tun
                 proxyFacade.startProxy(useTun)
                 
-                Timber.i("Clash started successfully via external intent")
+                Timber.i("External start ok")
             }.onFailure { e ->
-                Timber.e(e, "Failed to start Clash via external intent")
+                Timber.e(e, "External start failed")
             }
         }
     }
 
     private fun handleStopClash() {
         scope.launch {
-            Timber.i("Stopping Clash via external intent")
+            Timber.i("External stop")
             try {
                 proxyFacade.stopProxy()
-                Timber.i("Clash stopped successfully via external intent")
+                Timber.i("External stop ok")
             } catch (e: Exception) {
-                Timber.e(e, "Failed to stop Clash via external intent")
+                Timber.e(e, "External stop failed")
             }
         }
     }
 }
-

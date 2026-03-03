@@ -92,6 +92,8 @@ fun AppSettingsScreen(
     val themeSeedColorArgb = viewModel.themeSeedColorArgb.state.collectAsState().value
 
     val automaticRestart = viewModel.automaticRestart.state.collectAsState().value
+    val autoUpdateCurrentProfileOnStart =
+        viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState().value
     val hideAppIcon = viewModel.hideAppIcon.state.collectAsState().value
     val excludeFromRecents = viewModel.excludeFromRecents.state.collectAsState().value
     val showTrafficNotification = viewModel.showTrafficNotification.state.collectAsState().value
@@ -133,6 +135,12 @@ fun AppSettingsScreen(
                         summary = MLang.AppSettings.Behavior.AutoStartSummary,
                         checked = automaticRestart,
                         onCheckedChange = { viewModel.onAutomaticRestartChange(it) },
+                    )
+                    SuperSwitch(
+                        title = MLang.AppSettings.Behavior.AutoUpdateOnStartTitle,
+                        summary = MLang.AppSettings.Behavior.AutoUpdateOnStartSummary,
+                        checked = autoUpdateCurrentProfileOnStart,
+                        onCheckedChange = { viewModel.onAutoUpdateCurrentProfileOnStartChange(it) },
                     )
                     if (com.github.yumelira.yumebox.common.util.LocaleUtil.isChineseLocale()) {
                         SuperSwitch(

@@ -109,18 +109,18 @@ class SubStoreService : Service() {
         if (!NativeLibraryManager.isLibraryAvailable(javetLibBaseName)) {
             val results = NativeLibraryManager.extractAllLibraries()
             if (results[javetLibBaseName] != true) {
-                Timber.e("Javet 库提取失败")
+                Timber.e("Javet extract failed")
                 return false
             }
         }
 
         val loaded = NativeLibraryManager.loadJniLibrary(javetLibBaseName)
         if (!loaded) {
-            Timber.e("Javet 库加载失败，库状态: ${NativeLibraryManager.getLibraryStatus(javetLibBaseName)}")
+            Timber.e("Javet load failed: ${NativeLibraryManager.getLibraryStatus(javetLibBaseName)}")
         }
         loaded
     }.getOrElse { e ->
-        Timber.e(e, "Javet 库加载异常")
+        Timber.e(e, "Javet load error")
         false
     }
 }

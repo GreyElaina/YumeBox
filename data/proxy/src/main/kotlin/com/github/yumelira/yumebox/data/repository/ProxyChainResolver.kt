@@ -42,7 +42,7 @@ class ProxyChainResolver {
         visitedNames: MutableSet<String>
     ): Proxy? {
         if (proxyName in visitedNames) {
-            Timber.tag(TAG).w("检测到循环引用: $proxyName")
+            Timber.tag(TAG).w("Proxy cycle detected: $proxyName")
             return null
         }
         visitedNames.add(proxyName)
@@ -65,7 +65,7 @@ class ProxyChainResolver {
             }
         }
 
-        Timber.tag(TAG).w("无法解析节点: $proxyName")
+        Timber.tag(TAG).w("Proxy node unresolved: $proxyName")
         return null
     }
 

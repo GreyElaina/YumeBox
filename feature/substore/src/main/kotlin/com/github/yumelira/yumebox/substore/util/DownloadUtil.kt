@@ -212,7 +212,7 @@ object DownloadUtil : KoinComponent {
 
             success = true
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "下载失败: $url")
+            timber.log.Timber.e(e, "Download failed: $url")
             if (targetFile.exists()) targetFile.delete()
         }
 

@@ -161,10 +161,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                 isDownloading = true
                                 scope.launch {
                                     profiles.filter { it.type == Profile.Type.Url }.forEach { p ->
-                                        try {
-                                            profilesViewModel.updateProfile(p.uuid)
-                                        } catch (_: Exception) {
-                                        }
+                                        profilesViewModel.updateProfile(p.uuid)
                                     }
                                     isDownloading = false
                                 }

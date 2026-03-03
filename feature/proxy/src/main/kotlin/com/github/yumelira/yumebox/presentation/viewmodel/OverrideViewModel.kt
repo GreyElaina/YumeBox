@@ -57,7 +57,7 @@ class OverrideViewModel(
             result.onSuccess { config ->
                 _configuration.value = config
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "加载覆写配置失败")
+                Timber.tag(TAG).e(e, "Load override failed")
             }
             _isLoading.value = false
         }
@@ -69,7 +69,7 @@ class OverrideViewModel(
             result.onSuccess {
                 _configuration.value = ConfigurationOverride()
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "重置覆写配置失败")
+                Timber.tag(TAG).e(e, "Reset override failed")
             }
         }
     }
@@ -367,7 +367,7 @@ class OverrideViewModel(
         viewModelScope.launch {
             val result = overrideRepository.savePersist(updated)
             result.onFailure { e ->
-                Timber.tag(TAG).e(e, "保存覆写配置失败")
+                Timber.tag(TAG).e(e, "Save override failed")
             }
         }
     }
