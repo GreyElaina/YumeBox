@@ -27,6 +27,9 @@ import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.core.model.CompileResult
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.core.model.OverrideSpec
+import com.github.yumelira.yumebox.data.controller.TailscaleConfigPostProcessor
+import com.github.yumelira.yumebox.data.store.TailscaleSettingsStore
+import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.util.YamlCodec
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
@@ -36,8 +39,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
-class CompiledConfigPipeline(private val context: Context) {
+class CompiledConfigPipeline(
+    private val context: Context,
+    private val tailscalePostProcessor: TailscaleConfigPostProcessor? = null,
+) {
     private val overrideEnabled = !context.packageName.endsWith(".lite")
+
+    fun isTailscaleEnabled(): Boolean =
+        tailscalePostProcessor != null && tailscalePostProcessor.isEnabled()
 
     fun resolveOverrideSpecs(profileUuid: String): List<OverrideSpec> {
         return resolveOverrideBundle(profileUuid, logger = null).overrides
@@ -138,12 +147,77 @@ class CompiledConfigPipeline(private val context: Context) {
                 logger?.invoke("runtime prepare: compile failed reason=$failureMessage")
                 failureMessage
             }
-            validateCompiledProviderPaths(result.finalYaml, profileDir)
+            var finalYaml = result.finalYaml
+            if (tailscalePostProcessor != null && tailscalePostProcessor.isEnabled()) {
+                val runtimeFile = File(
+                    spec.runtimeConfigPath.ifBlank { profileDir.resolve("runtime.yaml").absolutePath }
+                )
+                finalYaml = applyTailscalePostProcessing(runtimeFile, finalYaml, logger)
+            }
+            validateCompiledProviderPaths(finalYaml, profileDir)
             logger?.invoke(
-                "runtime prepare: compile done fingerprint=${result.fingerprint} runtimeSha=${result.finalYaml.sha256Short()}"
+                "runtime prepare: compile done fingerprint=${result.fingerprint} runtimeSha=${finalYaml.sha256Short()}"
             )
             result.fingerprint
         }
+
+    private fun applyTailscalePostProcessing(
+        runtimeFile: File,
+        originalYaml: String,
+        logger: ((String) -> Unit)?,
+    ): String {
+        val processor = tailscalePostProcessor ?: return originalYaml
+        return runCatching {
+            var yaml = originalYaml
+            val proxyName = TailscaleConfigPostProcessor.PROXY_NAME
+
+            if (!yaml.contains("name: $proxyName")) {
+                val proxyYaml = buildProxyYamlFragment(processor.buildProxyEntry())
+                yaml = injectAfterListHead(yaml, "proxies:", proxyYaml)
+            }
+
+            val routingRules = TailscaleConfigPostProcessor.ROUTING_RULES
+            val missingRules = routingRules.filter { !yaml.contains(it) }
+            if (missingRules.isNotEmpty()) {
+                val rulesYaml = missingRules.joinToString("\n") { "- \"$it\"" }
+                yaml = injectAfterListHead(yaml, "rules:", rulesYaml)
+            }
+
+            runtimeFile.writeText(yaml)
+            logger?.invoke("tailscale post-process: injected proxy + rules")
+            yaml
+        }.getOrElse { err ->
+            logger?.invoke("tailscale post-process: failed reason=${err.message}")
+            originalYaml
+        }
+    }
+
+    private fun buildProxyYamlFragment(entry: Map<String, Any?>): String {
+        val sb = StringBuilder()
+        entry.entries.forEachIndexed { index, (key, value) ->
+            val prefix = if (index == 0) "- " else "  "
+            sb.append(prefix).append(key).append(": ").append(formatYamlScalar(value))
+            sb.append('\n')
+        }
+        return sb.toString().trimEnd()
+    }
+
+    private fun formatYamlScalar(value: Any?): String = when (value) {
+        null -> "null"
+        is Boolean -> value.toString()
+        is Number -> value.toString()
+        is String -> if (value.contains(':') || value.contains('#') || value.contains(' '))
+            "\"$value\"" else value
+        else -> "\"$value\""
+    }
+
+    private fun injectAfterListHead(yaml: String, sectionKey: String, fragment: String): String {
+        val keyLine = "\n$sectionKey\n"
+        val keyIndex = yaml.indexOf(keyLine)
+        if (keyIndex < 0) return yaml
+        val insertAt = keyIndex + keyLine.length
+        return yaml.substring(0, insertAt) + fragment + "\n" + yaml.substring(insertAt)
+    }
 
     suspend fun previewGroups(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<ProxyGroup> {
         val result = previewOverride(spec)
@@ -398,12 +472,25 @@ class CompiledConfigPipeline(private val context: Context) {
     @Serializable
     private data class ProfileChainPayload(val overrideIds: List<String> = emptyList())
 
-    private companion object {
+    companion object {
         private const val TAG = "CompiledConfigPipeline"
         private val PATH_PATTERN = Regex("""(?m)path:\s*["']?([^"'\n]+)["']?""")
         private val USER_OVERRIDE_EXTENSIONS = listOf("yaml", "yml", "js")
         const val INTERNAL_RUNTIME_PREFIX = "__runtime__"
         const val LEGACY_PRESET_PREFIX = "preset-"
+
+        fun create(context: Context): CompiledConfigPipeline {
+            val postProcessor = runCatching {
+                val mmkv = MMKVProvider().getMMKV("tailscale_settings")
+                val store = TailscaleSettingsStore(mmkv)
+                val processor = TailscaleConfigPostProcessor(store)
+                android.util.Log.i(TAG, "tailscale post-processor created, enabled=${store.enabled.value}")
+                processor
+            }.onFailure { err ->
+                android.util.Log.e(TAG, "tailscale post-processor init failed", err)
+            }.getOrNull()
+            return CompiledConfigPipeline(context, postProcessor)
+        }
     }
 }
 

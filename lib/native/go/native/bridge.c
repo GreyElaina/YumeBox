@@ -100,6 +100,18 @@ void release_object(void *obj) {
     release_object_func(obj);
 }
 
+void (*tailscale_notify_func)(const char *snapshot_json);
+
+void tailscale_notify(char *snapshot_json) {
+    TRACE_METHOD();
+
+    if (tailscale_notify_func != NULL) {
+        tailscale_notify_func(snapshot_json);
+    }
+
+    free(snapshot_json);
+}
+
 void log_info(char *msg) {
     __android_log_write(ANDROID_LOG_INFO, TAG, msg);
 

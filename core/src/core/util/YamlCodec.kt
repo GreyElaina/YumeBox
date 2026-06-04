@@ -55,6 +55,18 @@ object YamlCodec {
             }
         )
 
+    private val permissiveYaml =
+        Yaml(
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+                indent = 2
+                indicatorIndent = 0
+                width = 160
+                splitLines = false
+            }
+        )
+
     fun <T> encode(serializer: KSerializer<T>, value: T): String {
         val element = json.encodeToJsonElement(serializer, value)
         val tree = toYamlNode(element)
@@ -69,6 +81,10 @@ object YamlCodec {
 
     fun dumpMap(value: Map<String, Any?>): String {
         return dumpValue(value)
+    }
+
+    fun dumpMapPermissive(value: Map<String, Any?>): String {
+        return permissiveYaml.dump(normalizeYamlValue(value))
     }
 
     @Suppress("UNCHECKED_CAST")

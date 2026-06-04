@@ -52,6 +52,9 @@ extern void release_object(void *obj);
 
 extern int open_content(char *url, char *error, int error_length);
 
+extern void (*tailscale_notify_func)(const char *snapshot_json);
+extern void tailscale_notify(char *snapshot_json);
+
 extern void log_info(char *msg);
 
 extern void log_error(char *msg);

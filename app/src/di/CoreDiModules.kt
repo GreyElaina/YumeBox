@@ -27,6 +27,7 @@ import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
+import com.github.yumelira.yumebox.data.controller.TailscaleConfigPostProcessor
 import com.github.yumelira.yumebox.data.controller.OverrideResolver
 import com.github.yumelira.yumebox.data.controller.OverrideService
 import com.github.yumelira.yumebox.data.controller.ProvidersController
@@ -37,6 +38,7 @@ import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.LogStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.store.TailscaleSettingsStore
 import com.github.yumelira.yumebox.data.store.OverrideConfigProvider
 import com.github.yumelira.yumebox.data.store.OverrideConfigStore
 import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
@@ -77,8 +79,11 @@ val appFoundationModule = module {
     single<MMKV>(named("service_cache")) { get<MMKVProvider>().getMMKV("service_cache") }
     single<MMKV>(named("override_bindings")) { get<MMKVProvider>().getMMKV("override_bindings") }
 
+    single<MMKV>(named("tailscale_settings")) { get<MMKVProvider>().getMMKV("tailscale_settings") }
+
     single { AppSettingsStore(get<MMKV>(named("settings"))) }
     single { NetworkSettingsStore(get(named("network_settings"))) }
+    single { TailscaleSettingsStore(get(named("tailscale_settings"))) }
     single { ProfileLinksStore(get(named("profile_links"))) }
     single { FeatureStore(get(named("substore"))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
@@ -106,6 +111,7 @@ val appDataRuntimeModule = module {
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
         )
     }
+    single { TailscaleConfigPostProcessor(get()) }
     single { LogStore(androidApplication(), get()) }
     single { NetworkInfoService() }
     single {

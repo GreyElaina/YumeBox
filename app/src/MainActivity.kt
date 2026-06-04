@@ -51,6 +51,7 @@ import com.github.yumelira.yumebox.di.APPLICATION_SCOPE_NAME
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import com.github.yumelira.yumebox.presentation.component.StartupBiometricContent
+import com.github.yumelira.yumebox.presentation.component.TailscaleAuthHandler
 import com.github.yumelira.yumebox.presentation.component.ToastDialogHost
 import com.github.yumelira.yumebox.presentation.component.rememberStartupBiometricGateState
 import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
@@ -226,6 +227,7 @@ class MainActivity : FragmentActivity() {
                                         defaultTransitions = NavigationTransitions.defaultStyle,
                                     )
                                     ToastDialogHost()
+                                    TailscaleAuthHandler()
                                 }
                             }
                         }

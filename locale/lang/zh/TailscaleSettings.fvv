@@ -1,0 +1,70 @@
+<Tailscale Settings Page>
+TailscaleSettings = {
+    Title = "Tailscale"
+
+    Section = {
+        General = "基本配置"
+        Network = "网络"
+        ExitNode = "出口节点"
+        Danger = "危险操作"
+    }
+
+    EnableTitle = "启用 Tailscale"
+    EnableSummary = "注入 Tailscale 出站代理到当前配置"
+
+    HostnameTitle = "设备名"
+    HostnameSummary = "Tailscale 网络中的设备主机名"
+
+    AuthKeyTitle = "Auth Key"
+    AuthKeySummary = "可选，留空则首次启动时输出交互式登录 URL"
+
+    ControlUrlTitle = "Control Server"
+    ControlUrlSummary = "可选，自定义 Headscale/Tailscale 控制面地址"
+
+    EphemeralTitle = "临时节点"
+    EphemeralSummary = "断开后自动从 Tailnet 中移除"
+
+    UdpTitle = "启用 UDP"
+    UdpSummary = "允许通过 Tailscale 隧道转发 UDP 流量"
+
+    AcceptRoutesTitle = "接受路由"
+    AcceptRoutesSummary = "接受 Tailnet 中发布的子网路由"
+
+    ExitNodeTitle = "出口节点"
+    ExitNodeSummary = "指定 exit node 的 IP 或 auto:any"
+
+    ExitNodeAllowLanTitle = "允许 LAN 访问"
+    ExitNodeAllowLanSummary = "使用 exit node 时允许访问本地局域网"
+
+    LoginTitle = "触发认证"
+    LoginSummary = "手动发起 Tailscale 交互式登录"
+
+    StatusTitle = "查看状态"
+    StatusSummary = "Tailscale 连接状态、IP 地址及健康信息"
+
+    RevokeTitle = "撤销授权"
+    RevokeSummary = "登出 Tailscale 并从网络中移除此设备"
+    RevokeConfirmTitle = "撤销 Tailscale 授权"
+    RevokeConfirmMessage = "将登出 Tailscale 并移除此设备。如需重新使用需要再次认证。"
+    RevokeSuccess = "已成功撤销 Tailscale 授权"
+    RevokeFailure = "撤销失败: %s"
+
+    Status = {
+        Title = "Tailscale 状态"
+        State = "连接状态"
+        IPs = "Tailscale IP"
+        Hostname = "设备名"
+        Health = "健康状态"
+        Online = "在线"
+        Offline = "离线"
+        Healthy = "一切正常"
+        NoState = "未初始化"
+        NeedsLogin = "需要登录"
+        NeedsMachineAuth = "等待管理员批准"
+        Stopped = "已停止"
+        Starting = "启动中"
+        Running = "运行中"
+        InUseOtherUser = "被其他用户占用"
+        NotRunning = "Tailscale 未运行"
+    }
+}

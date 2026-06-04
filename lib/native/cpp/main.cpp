@@ -359,6 +359,17 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv
     subscribeLogcat(_callback);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeTailscaleExec(JNIEnv *env, jobject thiz,
+                                                                   jobject completable,
+                                                                   jstring request) {
+    TRACE_METHOD();
+
+    jobject _completable = new_global(completable);
+    scoped_string _request = get_string(request);
+
+    tailscaleExec(_completable, _request);
+}
 
 static jmethodID m_tun_interface_mark_socket;
 static jmethodID m_tun_interface_query_socket_owner;
@@ -523,6 +534,27 @@ static int call_logcat_interface_received_impl(void *callback, const char *paylo
     return 0;
 }
 
+static jclass c_tailscale_notifier;
+static jmethodID m_tailscale_notifier_on_notify;
+
+static void call_tailscale_notify_impl(const char *snapshot_json) {
+    TRACE_METHOD();
+
+    ATTACH_JNI();
+
+    jstring json_string = new_string(snapshot_json);
+    env->CallStaticVoidMethod(
+            c_tailscale_notifier,
+            m_tailscale_notifier_on_notify,
+            json_string);
+
+    if (json_string != NULL) {
+        env->DeleteLocalRef(json_string);
+    }
+
+    jni_catch_exception(env);
+}
+
 static int open_content_impl(const char *url, char *error, int error_length) {
     TRACE_METHOD();
 
@@ -589,6 +621,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     jclass _c_content = find_class("com/github/yumelira/yumebox/core/bridge/Content");
     jclass c_throwable = find_class("java/lang/Throwable");
     jclass c_unit = find_class("kotlin/Unit");
+    jclass _c_tailscale_notifier = find_class("com/github/yumelira/yumebox/core/bridge/TailscaleNotifier");
 
     m_tun_interface_mark_socket = find_method(c_tun_interface, "markSocket",
                                               "(I)V");
@@ -615,10 +648,15 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
                                        env->GetStaticFieldID(c_unit, "INSTANCE",
                                                              "Lkotlin/Unit;"));
 
+    m_tailscale_notifier_on_notify = env->GetStaticMethodID(
+            _c_tailscale_notifier, "onNotify", "(Ljava/lang/String;)V");
+
     c_clash_exception = (jclass) new_global(_c_clash_exception);
     c_content = (jclass) new_global(_c_content);
+    c_tailscale_notifier = (jclass) new_global(_c_tailscale_notifier);
     o_unit = new_global(o_unit);
 
+    tailscale_notify_func = &call_tailscale_notify_impl;
     mark_socket_func = &call_tun_interface_mark_socket_impl;
     query_socket_owner_func = &call_tun_interface_query_socket_owner_impl;
     complete_func = &call_completable_complete_impl;

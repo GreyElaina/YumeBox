@@ -53,6 +53,7 @@ import com.github.yumelira.yumebox.service.root.RootAccessSupport
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AccessControlScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.TailscaleSettingsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
@@ -267,6 +268,11 @@ private fun NetworkProxyOptionsSection(
             title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
             summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
             onClick = { navigator.navigate(AccessControlScreenDestination) },
+        )
+        PreferenceArrowItem(
+            title = MLang.TailscaleSettings.Title,
+            summary = MLang.TailscaleSettings.EnableSummary,
+            onClick = { navigator.navigate(TailscaleSettingsScreenDestination) },
         )
     }
 }

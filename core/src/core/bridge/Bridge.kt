@@ -116,6 +116,8 @@ object Bridge {
 
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
 
+    external fun nativeTailscaleExec(completable: CompletableDeferred<String>, request: String)
+
     external fun nativeCoreVersion(): String
 
     external fun nativeSetCustomUserAgent(userAgent: String)

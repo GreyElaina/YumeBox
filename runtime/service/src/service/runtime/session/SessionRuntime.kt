@@ -46,7 +46,7 @@ class SessionRuntime(
     private val transport: RuntimeTransport,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
-    private val compiledConfigPipeline = CompiledConfigPipeline(host.context.appContextOrSelf)
+    private val compiledConfigPipeline = CompiledConfigPipeline.create(host.context.appContextOrSelf)
     private val lock = Any()
     @Volatile private var interruptReason: String? = null
     private var currentSpec: RuntimeSpec? = null
@@ -492,6 +492,17 @@ class SessionRuntime(
         runBlocking { Clash.loadCompiledConfig(File(spec.runtimeConfigPath)).await() }
         startupLog(spec, "runtime load: loadCompiledConfig done")
         ensureNotInterrupted(spec)
+        if (compiledConfigPipeline.isTailscaleEnabled()) {
+            triggerTailscaleEagerStart(spec)
+        }
+    }
+
+    private fun triggerTailscaleEagerStart(spec: RuntimeSpec) {
+        scope.launch {
+            startupLog(spec, "tailscale: triggering eager start")
+            runCatching { Clash.healthCheckProxy("Tailscale").await() }
+            startupLog(spec, "tailscale: eager start triggered")
+        }
     }
 
     private fun awaitProxyGroupsReady(spec: RuntimeSpec) {
