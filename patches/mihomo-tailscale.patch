@@ -1,0 +1,212 @@
+diff --git a/adapter/outbound/tailscale.go b/adapter/outbound/tailscale.go
+index 0dabfd7f..10b56621 100644
+--- a/adapter/outbound/tailscale.go
++++ b/adapter/outbound/tailscale.go
+@@ -4,6 +4,7 @@ package outbound
+ 
+ import (
+ 	"context"
++	"encoding/json"
+ 	"errors"
+ 	"fmt"
+ 	"net"
+@@ -30,6 +31,20 @@ import (
+ 	"github.com/samber/lo"
+ )
+ 
++var OnTailscaleNotify func(snapshotJSON string)
++
++var TailscaleExecFunc func(requestJSON string) (string, error)
++var tailscaleExecOwner *Tailscale
++
++type TailscaleSnapshot struct {
++	State    string   `json:"state"`
++	IPs      []string `json:"ips"`
++	Hostname string   `json:"hostname"`
++	AuthURL  string   `json:"authUrl"`
++	Health   []string `json:"health"`
++	Online   bool     `json:"online"`
++}
++
+ type Tailscale struct {
+ 	*Base
+ 	server      *tsnet.Server
+@@ -195,7 +210,9 @@ func (t *Tailscale) start() error {
+ 			t.setBackendInitialized(err)
+ 			return
+ 		}
++		t.registerExec()
+ 		go t.watchBackendState()
++		go t.watchNotifications()
+ 	})
+ 	return t.startErr
+ }
+@@ -248,6 +265,160 @@ func (t *Tailscale) watchBackendState() {
+ 	}
+ }
+ 
++func (t *Tailscale) watchNotifications() {
++	lc, err := t.server.LocalClient()
++	if err != nil {
++		log.Warnln("[Tailscale](%s) watchNotifications: LocalClient failed: %v", t.Name(), err)
++		return
++	}
++	watcher, err := lc.WatchIPNBus(t.ctx, ipn.NotifyInitialState|ipn.NotifyInitialHealthState)
++	if err != nil {
++		log.Warnln("[Tailscale](%s) watchNotifications: WatchIPNBus failed: %v", t.Name(), err)
++		return
++	}
++	defer watcher.Close()
++
++	snapshot := TailscaleSnapshot{}
++	for {
++		n, err := watcher.Next()
++		if err != nil {
++			return
++		}
++		changed := false
++		if n.State != nil {
++			snapshot.State = n.State.String()
++			changed = true
++			if *n.State == ipn.Running {
++				t.populateStatusFields(&snapshot)
++			}
++		}
++		if n.BrowseToURL != nil {
++			snapshot.AuthURL = *n.BrowseToURL
++			changed = true
++		}
++		if n.Health != nil {
++			warnings := make([]string, 0, len(n.Health.Warnings))
++			for _, w := range n.Health.Warnings {
++				warnings = append(warnings, w.Text)
++			}
++			snapshot.Health = warnings
++			changed = true
++		}
++		if changed {
++			t.emitSnapshot(&snapshot)
++		}
++	}
++}
++
++func (t *Tailscale) populateStatusFields(snapshot *TailscaleSnapshot) {
++	lc, err := t.server.LocalClient()
++	if err != nil {
++		return
++	}
++	ctx, cancel := context.WithTimeout(t.ctx, 5*time.Second)
++	defer cancel()
++	st, err := lc.Status(ctx)
++	if err != nil {
++		log.Warnln("[Tailscale](%s) populateStatusFields: %v", t.Name(), err)
++		return
++	}
++	snapshot.IPs = make([]string, 0, len(st.TailscaleIPs))
++	for _, ip := range st.TailscaleIPs {
++		snapshot.IPs = append(snapshot.IPs, ip.String())
++	}
++	if st.Self != nil {
++		snapshot.Hostname = st.Self.HostName
++	}
++	snapshot.Online = st.BackendState == "Running"
++}
++
++func (t *Tailscale) emitSnapshot(snapshot *TailscaleSnapshot) {
++	fn := OnTailscaleNotify
++	if fn == nil {
++		return
++	}
++	data, err := json.Marshal(snapshot)
++	if err != nil {
++		log.Warnln("[Tailscale](%s) emitSnapshot: marshal failed: %v", t.Name(), err)
++		return
++	}
++	fn(string(data))
++}
++
++func (t *Tailscale) registerExec() {
++	tailscaleExecOwner = t
++	TailscaleExecFunc = func(requestJSON string) (string, error) {
++		var req struct {
++			Cmd  string          `json:"cmd"`
++			Args json.RawMessage `json:"args,omitempty"`
++		}
++		if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
++			return "", fmt.Errorf("invalid request: %w", err)
++		}
++		switch req.Cmd {
++		case "logout":
++			return t.execLogout()
++		case "login-interactive":
++			return t.execLoginInteractive()
++		case "status":
++			return t.execStatus()
++		default:
++			return "", fmt.Errorf("unknown command: %s", req.Cmd)
++		}
++	}
++}
++
++func (t *Tailscale) unregisterExec() {
++	if tailscaleExecOwner == t {
++		TailscaleExecFunc = nil
++		tailscaleExecOwner = nil
++	}
++}
++
++func (t *Tailscale) execLoginInteractive() (string, error) {
++	lc, err := t.server.LocalClient()
++	if err != nil {
++		return "", err
++	}
++	ctx, cancel := context.WithTimeout(t.ctx, 10*time.Second)
++	defer cancel()
++	if err := lc.StartLoginInteractive(ctx); err != nil {
++		return "", err
++	}
++	return `{"ok":true}`, nil
++}
++
++func (t *Tailscale) execLogout() (string, error) {
++	lc, err := t.server.LocalClient()
++	if err != nil {
++		return "", err
++	}
++	ctx, cancel := context.WithTimeout(t.ctx, 10*time.Second)
++	defer cancel()
++	if err := lc.Logout(ctx); err != nil {
++		return "", err
++	}
++	return `{"ok":true}`, nil
++}
++
++func (t *Tailscale) execStatus() (string, error) {
++	lc, err := t.server.LocalClient()
++	if err != nil {
++		return "", err
++	}
++	ctx, cancel := context.WithTimeout(t.ctx, 5*time.Second)
++	defer cancel()
++	st, err := lc.Status(ctx)
++	if err != nil {
++		return "", err
++	}
++	data, err := json.Marshal(st)
++	if err != nil {
++		return "", err
++	}
++	return string(data), nil
++}
++
+ func (t *Tailscale) setBackendInitialized(err error) {
+ 	t.backendInitOnce.Do(func() {
+ 		t.backendInitErr = err
+@@ -462,6 +633,7 @@ func (t *Tailscale) IsL3Protocol(metadata *C.Metadata) bool {
+ }
+ 
+ func (t *Tailscale) Close() error {
++	t.unregisterExec()
+ 	t.cancel()
+ 	if t.unregisterDNSResolver != nil {
+ 		t.unregisterDNSResolver()
